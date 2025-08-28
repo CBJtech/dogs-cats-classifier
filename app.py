@@ -1,3 +1,4 @@
+
 import streamlit as st
 import torch
 import torch.nn as nn
@@ -43,7 +44,7 @@ def load_model():
     if not os.path.exists(model_path):
         try:
             st.info("📥 Downloading model from Google Drive... This may take a moment.")
-            file_id = "11ySr9Xf7p9xoE58ebl0wN-6p2Zu0y09G2"  # Your file ID
+            file_id = "1ySr9Xf7p9xoE58ebl0wN-6p2Zu0y09G2"  # file ID
             
             # Create a progress bar for download
             progress_bar = st.progress(0)
@@ -259,9 +260,9 @@ def main():
     st.markdown("---")
     st.markdown(
         """
-        div style='text-align: center'>
+        <div style='text-align: center'>
             <p>Built by <a href="https://cbjtech.github.io/portfolio/"> Cherno Basiru Jallow</a> using PyTorch and Streamlit</p>
-            <p> Deployed on Streamlit Community Cloud</p>
+            <p>Deployed on Streamlit Community Cloud</p>
         </div>
         """,
         unsafe_allow_html=True
