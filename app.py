@@ -9,20 +9,14 @@ Original file is located at
 
 import gdown
 import os
-import torch
 
-# Path where the model will be saved
 model_path = "model.pt"
+file_id = "1ySr9Xf7p9xoE58ebl0wN-6p2Zu0y09G2/"
+url = https://drive.google.com/file/d/{1ySr9Xf7p9xoE58ebl0wN-6p2Zu0y09G2/}"
 
-# Download only if it doesn't exist
 if not os.path.exists(model_path):
-    url = "https://drive.google.com/file/d/1ySr9Xf7p9xoE58ebl0wN-6p2Zu0y09G2/"
     gdown.download(url, model_path, quiet=False)
 
-# Load your model
-model = MyModelClass(*args)  # define your model
-model.load_state_dict(torch.load(model_path))
-model.eval()
 
 
 # Commented out IPython magic to ensure Python compatibility.
