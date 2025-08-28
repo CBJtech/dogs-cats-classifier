@@ -261,7 +261,7 @@ def main():
         """
         div style='text-align: center'>
             <p>Built by <a href="https://cbjtech.github.io/portfolio/"> Cherno Basiru Jallow</a> using PyTorch and Streamlit</p>
-            <p>🚀 Deployed on Streamlit Community Cloud</p>
+            <p> Deployed on Streamlit Community Cloud</p>
         </div>
         """,
         unsafe_allow_html=True
@@ -269,6 +269,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
 """
 import streamlit as st
 import torch
