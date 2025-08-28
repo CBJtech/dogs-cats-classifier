@@ -1,4 +1,3 @@
-
 import streamlit as st
 import torch
 import torch.nn as nn
@@ -9,7 +8,7 @@ from PIL import Image
 import gdown
 import os
 
-# Model Definition
+# Model Definition (same as your Colab)
 class Net(nn.Module):
     def __init__(self):
         super().__init__()
@@ -77,45 +76,54 @@ def load_model():
         st.error("Please ensure your model was saved correctly.")
         st.stop()
 
+def preprocess_image(image):
+    """
+    Preprocess image EXACTLY as done during training
+    Based on your Colab code:
+    transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Resize((128, 128)),
+        transforms.Normalize(mean=[0.5], std=[0.5])
+    ])
+    """
+    # Convert to grayscale if needed (matches cv2.IMREAD_GRAYSCALE)
+    if image.mode != 'L':
+        image = image.convert('L')
+    
+    # Convert PIL Image to numpy array (similar to cv2.imread)
+    img_array = np.array(image)
+    
+    # Apply ToTensor equivalent: convert to float and scale to [0, 1]
+    img_tensor = torch.from_numpy(img_array).float() / 255.0
+    
+    # Add channel dimension: [H, W] -> [1, H, W]
+    img_tensor = img_tensor.unsqueeze(0)
+    
+    # Apply Resize equivalent: resize to 128x128
+    img_tensor = F.interpolate(img_tensor.unsqueeze(0), size=(128, 128), mode='bilinear', align_corners=False)
+    img_tensor = img_tensor.squeeze(0)
+    
+    # Apply Normalization: mean=[0.5], std=[0.5]
+    img_tensor = (img_tensor - 0.5) / 0.5
+    
+    return img_tensor, img_array
+
 def predict_image(model, uploaded_file, device):
     """Predict uploaded image with EXACT same preprocessing as training"""
     try:
         # Open and process image
         image = Image.open(uploaded_file)
         
-        # Convert to grayscale if needed
-        if image.mode != 'L':
-            image = image.convert('L')
+        # Preprocess the image (EXACTLY as in training)
+        img_tensor, img_array = preprocess_image(image)
+        img_tensor = img_tensor.to(device)
         
-        # Convert PIL to numpy array for display
-        img_array = np.array(image)
+        # Add batch dimension
+        img_tensor = img_tensor.unsqueeze(0)
         
-        # CRITICAL: Use EXACT same transform pipeline as training
-        # Your training transform: transforms.Compose([
-        #     transforms.ToTensor(),           # Converts to [0,1] and adds channel dim
-        #     transforms.Resize((128, 128)),   # Resize to 128x128
-        #     transforms.Normalize(mean=[0.5], std=[0.5])  # Normalize to [-1,1]
-        # ])
-        
-        # Apply identical transforms manually
-        # Step 1: Convert to tensor (ToTensor equivalent)
-        img_tensor = torch.from_numpy(np.array(image)).float()
-        img_tensor = img_tensor / 255.0  # Normalize to [0,1]
-        img_tensor = img_tensor.unsqueeze(0)  # Add channel dimension [H,W] -> [1,H,W]
-        
-        # Step 2: Resize (must be done on tensor, not numpy array)
-        img_tensor = F.interpolate(img_tensor.unsqueeze(0), size=(128, 128), mode='bilinear', align_corners=False)
-        img_tensor = img_tensor.squeeze(0)  # Remove extra batch dim [1,1,128,128] -> [1,128,128]
-        
-        # Step 3: Normalize exactly like training
-        img_tensor = (img_tensor - 0.5) / 0.5  # Normalize to [-1,1]
-        
-        # Add batch dimension and move to device
-        img_tensor = img_tensor.unsqueeze(0).to(device)  # [1,128,128] -> [1,1,128,128]
-        
-        # Debug: Print tensor stats
-        print(f"Tensor shape: {img_tensor.shape}")
-        print(f"Tensor range: [{img_tensor.min():.3f}, {img_tensor.max():.3f}]")
+        # Debug info
+        st.write(f"Input tensor shape: {img_tensor.shape}")
+        st.write(f"Input tensor range: [{img_tensor.min():.3f}, {img_tensor.max():.3f}]")
         
         # Make prediction
         model.eval()
@@ -137,7 +145,8 @@ def predict_image(model, uploaded_file, device):
         
     except Exception as e:
         st.error(f"❌ Error processing image: {str(e)}")
-        print(f"Detailed error: {str(e)}")
+        import traceback
+        st.error(f"Detailed error: {traceback.format_exc()}")
         return None
 
 def main():
@@ -250,6 +259,13 @@ def main():
                     with col_d:
                         st.metric("Confidence", f"{confidence:.1%}")
                         st.metric("Dog Score", f"{dog_prob:.3f}")
+                    
+                    # Show preprocessed image for debugging
+                    with st.expander("🔍 View Preprocessed Image"):
+                        st.write("This is how the model sees your image (128x128 grayscale):")
+                        # Display the preprocessed image (resized for viewing)
+                        display_img = Image.fromarray(result['image']).resize((256, 256))
+                        st.image(display_img, use_column_width=True)
         
         else:
             st.info("👆 Please upload an image to get started!")
