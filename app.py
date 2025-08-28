@@ -12,7 +12,7 @@ import os
 
 model_path = "model.pt"
 file_id = "1ySr9Xf7p9xoE58ebl0wN-6p2Zu0y09G2/"
-url = https://drive.google.com/file/d/{1ySr9Xf7p9xoE58ebl0wN-6p2Zu0y09G2/}"
+url = "https://drive.google.com/file/d/{1ySr9Xf7p9xoE58ebl0wN-6p2Zu0y09G2/}"
 
 if not os.path.exists(model_path):
     gdown.download(url, model_path, quiet=False)
