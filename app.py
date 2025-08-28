@@ -7,7 +7,7 @@ Original file is located at
     https://colab.research.google.com/drive/1GjQ2_O2yuVkYcb3Md13uv_QTSTfwK3oL
 """
 
-!pip install gdown
+%pip install gdown
 import gdown
 import os
 import torch
