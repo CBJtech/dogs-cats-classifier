@@ -43,7 +43,7 @@ def load_model():
     if not os.path.exists(model_path):
         try:
             st.info("📥 Downloading model from Google Drive... This may take a moment.")
-            file_id = "1ySr9Xf7p9xoE58ebl0wN-6p2Zu0y09G2"  # Your file ID
+            file_id = "1ySr9Xf7p9xoE58ebl0wN-6p2Zu0y09G2"  # file ID
             
             # Create a progress bar for download
             progress_bar = st.progress(0)
@@ -77,7 +77,7 @@ def load_model():
         st.stop()
 
 def predict_image(model, uploaded_file, device):
-    """Predict uploaded image"""
+    """Predict uploaded image with EXACT same preprocessing as training"""
     try:
         # Open and process image
         image = Image.open(uploaded_file)
@@ -86,17 +86,38 @@ def predict_image(model, uploaded_file, device):
         if image.mode != 'L':
             image = image.convert('L')
         
-        # Convert PIL to numpy array
+        # Convert PIL to numpy array for display
         img_array = np.array(image)
         
-        # Apply same preprocessing as training
-        img_resized = cv2.resize(img_array, (128, 128))
-        img_tensor = torch.from_numpy(img_resized).float().unsqueeze(0).unsqueeze(0)
-        img_tensor = img_tensor / 255.0
-        img_tensor = (img_tensor - 0.5) / 0.5  # Normalize to [-1, 1]
-        img_tensor = img_tensor.to(device)
+        # CRITICAL: Use EXACT same transform pipeline as training
+        # Your training transform: transforms.Compose([
+        #     transforms.ToTensor(),           # Converts to [0,1] and adds channel dim
+        #     transforms.Resize((128, 128)),   # Resize to 128x128
+        #     transforms.Normalize(mean=[0.5], std=[0.5])  # Normalize to [-1,1]
+        # ])
+        
+        # Apply identical transforms manually
+        # Step 1: Convert to tensor (ToTensor equivalent)
+        img_tensor = torch.from_numpy(np.array(image)).float()
+        img_tensor = img_tensor / 255.0  # Normalize to [0,1]
+        img_tensor = img_tensor.unsqueeze(0)  # Add channel dimension [H,W] -> [1,H,W]
+        
+        # Step 2: Resize (must be done on tensor, not numpy array)
+        img_tensor = F.interpolate(img_tensor.unsqueeze(0), size=(128, 128), mode='bilinear', align_corners=False)
+        img_tensor = img_tensor.squeeze(0)  # Remove extra batch dim [1,1,128,128] -> [1,128,128]
+        
+        # Step 3: Normalize exactly like training
+        img_tensor = (img_tensor - 0.5) / 0.5  # Normalize to [-1,1]
+        
+        # Add batch dimension and move to device
+        img_tensor = img_tensor.unsqueeze(0).to(device)  # [1,128,128] -> [1,1,128,128]
+        
+        # Debug: Print tensor stats
+        print(f"Tensor shape: {img_tensor.shape}")
+        print(f"Tensor range: [{img_tensor.min():.3f}, {img_tensor.max():.3f}]")
         
         # Make prediction
+        model.eval()
         with torch.no_grad():
             outputs = model(img_tensor)
             probabilities = F.softmax(outputs, dim=1)
@@ -115,6 +136,7 @@ def predict_image(model, uploaded_file, device):
         
     except Exception as e:
         st.error(f"❌ Error processing image: {str(e)}")
+        print(f"Detailed error: {str(e)}")
         return None
 
 def main():
@@ -238,7 +260,7 @@ def main():
     st.markdown(
         """
         <div style='text-align: center'>
-            <p>Built with ❤️ using PyTorch and Streamlit</p>
+            <p>Built by <a href="https://cbjtech.github.io/portfolio/"> Cherno Basiru Jallow</a> using PyTorch and Streamlit</p>
             <p>🚀 Deployed on Streamlit Community Cloud</p>
         </div>
         """,
